@@ -28,11 +28,19 @@ import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
+/**
+ * Annotation processor that generates {@code *Req} classes for types annotated with
+ * {@link OptionalClassReq}. Runs at compile time via the standard
+ * {@code javax.annotation.processing} SPI — no manual configuration required.
+ *
+ * @see OptionalClassReq
+ */
 @SupportedAnnotationTypes(OptionalFieldProcessor.PACKAGE + ".OptionalClassReq")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
 @SupportedOptions("verbose")
 public class OptionalFieldProcessor extends AbstractProcessor {
 
+    /** Base package used in generated imports. */
     protected static final String PACKAGE = "io.optionalfield.processor";
 
     private Set<String> skipAnotations = Set.of("Schema");

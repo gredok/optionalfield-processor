@@ -48,6 +48,10 @@ tasks.test {
     useJUnitPlatform()
 }
 
+tasks.withType<Javadoc>().configureEach {
+    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet")
+}
+
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
