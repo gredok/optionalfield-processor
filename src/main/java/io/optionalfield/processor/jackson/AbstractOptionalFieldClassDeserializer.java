@@ -1,0 +1,123 @@
+package io.optionalfield.processor.jackson;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.Collection;
+import io.optionalfield.processor.OptionalField;
+
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.JsonNodeType;
+import tools.jackson.databind.type.CollectionType;
+
+public abstract class AbstractOptionalFieldClassDeserializer<T> extends ValueDeserializer<T> {
+
+    protected abstract Class<T> rawClass();
+
+    private static final ObjectMapper mapper = JsonMapper
+            .builder()
+            .build();
+
+    @Override
+    public T deserialize(JsonParser p, DeserializationContext ctxt) throws IllegalStateException {
+        return useFields(p, ctxt, ctxt.readTree(p));
+    }
+
+    private T useFields(JsonParser p, DeserializationContext ctxt, JsonNode rootNode) {
+        Class<T> rawClass = rawClass();
+        T instance;
+        try {
+            instance = rawClass.getDeclaredConstructor().newInstance(); // Use default constructor if available
+        } catch (Exception e) {
+            throw new IllegalStateException("Error creating instance of " + rawClass.getName(), e);
+        }
+        Arrays.stream(rawClass.getDeclaredFields()).forEach(field -> {
+            field.setAccessible(true); // Make private fields accessible
+            try {
+                Object fieldValue = getObject(p, ctxt, field, rootNode); // Use getObject for field processing
+                field.set(instance, fieldValue); // Set the field value on the instance
+            } catch (Exception e) {
+                throw new IllegalStateException("Error setting field value for " + field.getName(), e);
+            }
+        });
+        return instance;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object getObject(JsonParser p, DeserializationContext ctxt, Field field, JsonNode rootNode) throws IOException {
+        String fieldName = field.getName(); // Get the field name
+        JsonNode fieldNode = rootNode.has(fieldName) ? rootNode.get(fieldName) : null;
+
+        boolean isPresent = fieldNode != null;
+        Object fieldValue = null;
+
+        if (isPresent && fieldNode.getNodeType() != JsonNodeType.NULL) {
+            JavaType fieldType;
+
+            // Build JavaType for the generic type of the field
+            if (isAssignableFrom(field.getGenericType(), OptionalField.class)) {
+                fieldType = getJavaType(field.getGenericType());
+            } else {
+                fieldType = ctxt.getTypeFactory().constructType(field.getGenericType());
+            }
+
+            if (Collection.class.isAssignableFrom(fieldType.getRawClass())) {
+                // If the field is a Collection, construct a CollectionType
+                CollectionType collectionType = ctxt.getTypeFactory().constructCollectionType(
+                        (Class<? extends Collection<?>>) fieldType.getRawClass(),
+                        fieldType.containedType(0).getRawClass()
+                );
+
+                // Deserialize the collection field
+                fieldValue = ctxt.readTreeAsValue(fieldNode, collectionType);
+            } else {
+                // For non-Collection fields, deserialize the field value
+                fieldValue = ctxt.readTreeAsValue(fieldNode, ctxt.constructType(fieldType));
+                if (fieldValue instanceof String && ((String) fieldValue).isEmpty()) {
+                    fieldValue = null;
+                }
+            }
+        }
+
+        if (isAssignableFrom(field.getGenericType(), OptionalField.class)) {
+            return new OptionalField<>(fieldName, isPresent, fieldValue);
+        }
+
+        return fieldValue; // Return the deserialized field value
+    }
+
+    private static JavaType getJavaType(Type parameterType) {
+        // Check if it's an Optional using isAssignableFrom
+        if (isAssignableFrom(parameterType, OptionalField.class)) {
+            if (parameterType instanceof ParameterizedType) {
+                // Extract the generic type argument of Optional (e.g., String in Optional<String>)
+                Type[] typeArguments = ((ParameterizedType) parameterType).getActualTypeArguments();
+                if (typeArguments.length == 1) {
+                    // Convert the inner type to JavaType
+                    return mapper.getTypeFactory().constructType(typeArguments[0]);
+                }
+            }
+        }
+        throw new IllegalArgumentException("Parameter is not an Optional<T> with a valid generic type.");
+    }
+
+    private static boolean isAssignableFrom(Type type, Class<?> targetClass) {
+        if (type instanceof ParameterizedType) {
+            Type rawType = ((ParameterizedType) type).getRawType();
+            if (rawType instanceof Class) {
+                return targetClass.isAssignableFrom((Class<?>) rawType);
+            }
+        } else if (type instanceof Class) {
+            return targetClass.isAssignableFrom((Class<?>) type);
+        }
+        return false;
+    }
+}

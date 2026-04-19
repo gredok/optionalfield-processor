@@ -1,0 +1,56 @@
+package io.optionalfield.processor.jackson;
+
+import java.lang.reflect.Field;
+import io.optionalfield.processor.OptionalField;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonGenerator;
+import tools.jackson.databind.SerializationContext;
+import tools.jackson.databind.ValueSerializer;
+import tools.jackson.databind.annotation.JsonSerialize;
+
+public abstract class AbstractOptionalFieldClassSerializer<T> extends ValueSerializer<T> {
+    @Override public void serialize(T value, JsonGenerator gen, SerializationContext ctxt) throws JacksonException {
+        gen.writeStartObject();
+        for (Field field : value.getClass().getDeclaredFields()) {
+            field.setAccessible(true);
+            try {
+                String fieldName = field.getName();
+                JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
+                if (jsonProperty != null && !jsonProperty.value().isEmpty()) {
+                    fieldName = jsonProperty.value();
+                }
+                Object fieldValue = field.get(value);
+                if (fieldValue instanceof OptionalField<?> optField) {
+                    if (optField.isPresent()) {
+                        gen.writeName(fieldName);
+                        writeFieldValue(field, optField.getValue(), gen, ctxt);
+                    }
+                } else if (fieldValue != null) {
+                    gen.writeName(fieldName);
+                    writeFieldValue(field, fieldValue, gen, ctxt);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Failed to access field: " + field.getName(), e);
+            }
+        }
+
+        gen.writeEndObject();
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void writeFieldValue(Field field, Object fieldValue, JsonGenerator gen, SerializationContext ctxt) throws JacksonException {
+        JsonSerialize jsonSerialize = field.getAnnotation(JsonSerialize.class);
+        if (jsonSerialize != null && jsonSerialize.using() != ValueSerializer.None.class) {
+            try {
+                ValueSerializer serializer = jsonSerialize.using().getDeclaredConstructor().newInstance();
+                serializer.serialize(fieldValue, gen, ctxt);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to instantiate serializer from @JsonSerialize on field: " + field.getName(), e);
+            }
+        } else {
+            gen.writePOJO(fieldValue);
+        }
+    }
+}
