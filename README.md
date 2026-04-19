@@ -1,5 +1,9 @@
 # OptionalField Processor
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://openjdk.org/)
+[![CI](https://github.com/jgreznar/optionalfield-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/jgreznar/optionalfield-processor/actions/workflows/ci.yml)
+
 A Java annotation processor that solves the **PATCH request problem**: distinguishing between a field that was **not sent** in a JSON payload and a field that was **explicitly set to null**.
 
 ## The problem
