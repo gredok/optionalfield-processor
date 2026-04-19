@@ -111,4 +111,4 @@ UpdateUserRequestReq req = UpdateUserRequestReq.builder()
 
 ## License
 
-MIT
+Apache 2.0
