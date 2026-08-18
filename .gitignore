@@ -39,3 +39,7 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Local dev assistant files ###
+.claude/
+CLAUDE.md
