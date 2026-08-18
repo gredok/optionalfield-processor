@@ -18,6 +18,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
@@ -101,7 +102,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
             // Collect imports
             for (Element field : classElement.getEnclosedElements()) {
-                if (field.getKind() == ElementKind.FIELD) {
+                if (isProcessableField(field)) {
                     imports.addAll(getAnnotationImports(field));
                 }
                 imports.addAll(getRequiredImports(field.asType(), classElement.getSimpleName() + "Builder"));
@@ -127,7 +128,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
                 // Generate fields
                 for (Element field : classElement.getEnclosedElements()) {
-                    if (field.getKind() == ElementKind.FIELD) {
+                    if (isProcessableField(field)) {
                         generateField(out, field);
                     }
                 }
@@ -160,7 +161,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
     private void generateGetters(PrintWriter out, TypeElement classElement) {
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 String simpleType = getSimpleTypeName(field.asType());
                 String capitalizedFieldName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
@@ -174,13 +175,13 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
     private void generateSetters(PrintWriter out, TypeElement classElement) {
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 String simpleType = getSimpleTypeName(field.asType());
                 String capitalizedFieldName = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
                 out.println();
                 out.println("    public void set" + capitalizedFieldName + "(OptionalField<" + simpleType + "> " + fieldName + ") {");
-                out.println("        this." + fieldName + " = " + fieldName + ";");
+                out.println("        this." + fieldName + " = " + fieldName + " != null ? " + fieldName + " : OptionalField.empty();");
                 out.println("    }");
             }
         }
@@ -203,7 +204,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         out.println("    public static class Builder {");
 
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 String simpleType = getSimpleTypeName(field.asType());
                 out.println("        private OptionalField<" + simpleType + "> " + fieldName + " = OptionalField.empty();");
@@ -214,7 +215,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
         // Builder methods - also without annotations in parameters
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 String simpleType = getSimpleTypeName(field.asType());
 
@@ -230,7 +231,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         out.println("        public " + className + " build() {");
         out.println("            " + className + " instance = new " + className + "();");
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 out.println("            instance." + fieldName + " = this." + fieldName + ";");
             }
@@ -245,7 +246,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         out.println("    public Map<String, Object> toMap() {");
         out.println("        Map<String, Object> map = new HashMap<>();");
         for (Element field : classElement.getEnclosedElements()) {
-            if (field.getKind() == ElementKind.FIELD) {
+            if (isProcessableField(field)) {
                 String fieldName = field.getSimpleName().toString();
                 out.println("        if (this." + fieldName + ".isPresent()) map.put(\"" + fieldName + "\", this." + fieldName + ".getValue());");
             }
@@ -325,6 +326,15 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         String fullName = annotation.getAnnotationType().toString();
         String simpleName = fullName.substring(fullName.lastIndexOf('.') + 1);
         return simpleName.equals("JsonProperty") || simpleName.equals("JsonSerialize") || simpleName.equals("JsonDeserialize");
+    }
+
+    /**
+     * A field is processable (wrapped as a generated {@code OptionalField<T>}) only if it's an
+     * instance field. Static fields (constants) on the source class are left out of the generated
+     * request class entirely — they're not part of the wire payload.
+     */
+    private boolean isProcessableField(Element field) {
+        return field.getKind() == ElementKind.FIELD && !field.getModifiers().contains(Modifier.STATIC);
     }
 
     private String getSimpleTypeName(TypeMirror type) {
