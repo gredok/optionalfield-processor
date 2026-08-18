@@ -1,4 +1,4 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
 //import static org.junit.jupiter.api.Assertions.*;
 //
@@ -9,7 +9,7 @@ package io.optionalfield.processor;
 //import com.fasterxml.jackson.databind.DeserializationFeature;
 //import com.fasterxml.jackson.databind.ObjectMapper;
 //import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-//import io.optionalfield.processor.jackson.OptionalFieldClassDeserializer;
+//import com.gredok.optionalfield.processor.jackson.OptionalFieldClassDeserializer;
 //import org.junit.jupiter.api.Test;
 //
 //import lombok.AllArgsConstructor;

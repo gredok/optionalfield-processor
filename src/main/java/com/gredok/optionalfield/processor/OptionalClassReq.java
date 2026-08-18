@@ -1,4 +1,4 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

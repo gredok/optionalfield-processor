@@ -1,8 +1,9 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import tools.jackson.databind.DeserializationFeature;
@@ -127,6 +128,81 @@ public class OptionalFieldClassDeserializerTest2 {
 
         assertTrue(serialized.contains("\"name_1\":\"value 1\""));
         assertFalse(serialized.contains("\"name\""));
+    }
+
+    @Test
+    public void toMapShouldContainOnlyPresentFields() {
+        String json = """
+                    {
+                        "name": "outer name"
+                    }
+                """;
+
+        TestJsonReq result = testObjectMapper().readValue(json, TestJsonReq.class);
+        Map<String, Object> map = result.toMap();
+
+        assertEquals(1, map.size());
+        assertEquals("outer name", map.get("name"));
+        assertFalse(map.containsKey("note"));
+    }
+
+    @Test
+    public void toMapShouldContainAllPresentFields() {
+        String json = """
+                    {
+                        "name": "outer name",
+                        "note": "a note"
+                    }
+                """;
+
+        TestJsonReq result = testObjectMapper().readValue(json, TestJsonReq.class);
+        Map<String, Object> map = result.toMap();
+
+        assertEquals(2, map.size());
+        assertEquals("outer name", map.get("name"));
+        assertEquals("a note", map.get("note"));
+    }
+
+    @Test
+    public void toMapShouldIncludePresentNullValue() {
+        String json = """
+                    {
+                        "name": null
+                    }
+                """;
+
+        TestJsonReq result = testObjectMapper().readValue(json, TestJsonReq.class);
+        Map<String, Object> map = result.toMap();
+
+        assertEquals(1, map.size());
+        assertTrue(map.containsKey("name"));
+        assertNull(map.get("name"));
+        assertFalse(map.containsKey("note"));
+    }
+
+    @Test
+    public void toMapShouldReturnEmptyMapWhenNoFieldsPresent() {
+        TestJsonReq result = new TestJsonReq();
+        Map<String, Object> map = result.toMap();
+
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void toMapShouldUseJavaFieldNameNotJsonPropertyName() {
+        String json = """
+                    {
+                        "name": "value 1"
+                    }
+                """;
+
+        TestJson2Req result = testObjectMapper().readValue(json, TestJson2Req.class);
+        Map<String, Object> map = result.toMap();
+
+        assertEquals(1, map.size());
+        assertTrue(map.containsKey("name"));
+        assertFalse(map.containsKey("name_1"));
+        assertEquals("value 1", map.get("name"));
     }
 
 

@@ -1,4 +1,6 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
+
+import java.util.Objects;
 
 /**
  * Wraps a single field value to carry presence information alongside the value itself.
@@ -95,5 +97,31 @@ public class OptionalField<T> {
      */
     public T getValue() {
         return value;
+    }
+
+    /**
+     * Two {@code OptionalField} instances are equal when they have the same field name,
+     * presence flag, and value.
+     *
+     * @param o the object to compare against
+     * @return {@code true} if equal
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof OptionalField<?> that)) return false;
+        return isPresent == that.isPresent
+                && Objects.equals(fieldName, that.fieldName)
+                && Objects.equals(value, that.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(fieldName, isPresent, value);
+    }
+
+    @Override
+    public String toString() {
+        return "OptionalField{fieldName='" + fieldName + "', isPresent=" + isPresent + ", value=" + value + '}';
     }
 }

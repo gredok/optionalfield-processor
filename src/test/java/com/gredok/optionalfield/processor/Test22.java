@@ -1,4 +1,4 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

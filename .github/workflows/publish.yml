@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
 
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +19,13 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Publish to GitHub Packages
-        run: ./gradlew publish
+      # Requires these repository secrets:
+      #   CENTRAL_PORTAL_USERNAME / CENTRAL_PORTAL_PASSWORD - Central Portal user token (central.sonatype.com)
+      #   SIGNING_KEY / SIGNING_PASSWORD                     - ASCII-armored GPG private key + passphrase
+      - name: Publish to Maven Central
+        run: ./gradlew publishAggregationToCentralPortal
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
+          CENTRAL_PORTAL_USERNAME: ${{ secrets.CENTRAL_PORTAL_USERNAME }}
+          CENTRAL_PORTAL_PASSWORD: ${{ secrets.CENTRAL_PORTAL_PASSWORD }}
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}

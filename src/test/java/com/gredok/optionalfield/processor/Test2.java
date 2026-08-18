@@ -1,7 +1,7 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
-import io.optionalfield.processor.jackson.AbstractOptionalFieldClassDeserializer;
-import io.optionalfield.processor.jackson.AbstractOptionalFieldClassSerializer;
+import com.gredok.optionalfield.processor.jackson.AbstractOptionalFieldClassDeserializer;
+import com.gredok.optionalfield.processor.jackson.AbstractOptionalFieldClassSerializer;
 
 import lombok.Data;
 import tools.jackson.databind.annotation.JsonDeserialize;

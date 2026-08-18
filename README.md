@@ -1,8 +1,9 @@
 # OptionalField Processor
 
+[![Maven Central](https://img.shields.io/maven-central/v/com.gredok/optionalfield-processor.svg)](https://central.sonatype.com/artifact/com.gredok/optionalfield-processor)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21%2B-orange.svg)](https://openjdk.org/)
-[![CI](https://github.com/jgreznar/optionalfield-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/jgreznar/optionalfield-processor/actions/workflows/ci.yml)
+[![CI](https://github.com/gredok/optionalfield-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/gredok/optionalfield-processor/actions/workflows/ci.yml)
 
 A Java annotation processor that solves the **PATCH request problem**: distinguishing between a field that was **not sent** in a JSON payload and a field that was **explicitly set to null**.
 
@@ -64,22 +65,18 @@ The serializer only writes fields where `isPresent()` is `true`, so serializing 
 
 ## Installation
 
+Available on Maven Central — no extra repositories or credentials needed.
+
 ### Gradle
 
 ```kotlin
 dependencies {
-    implementation("io.optionalfield:optionalfield-processor:1.2.0")
-    annotationProcessor("io.optionalfield:optionalfield-processor:1.2.0")
+    implementation("com.gredok:optionalfield-processor:1.2.0")
+    annotationProcessor("com.gredok:optionalfield-processor:1.2.0")
 }
 
 repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/jgreznar/optionalfield-processor")
-        credentials {
-            username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
-            password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
-        }
-    }
+    mavenCentral()
 }
 ```
 
@@ -87,7 +84,7 @@ repositories {
 
 ```xml
 <dependency>
-    <groupId>io.optionalfield</groupId>
+    <groupId>com.gredok</groupId>
     <artifactId>optionalfield-processor</artifactId>
     <version>1.2.0</version>
 </dependency>

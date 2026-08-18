@@ -1,4 +1,4 @@
-package io.optionalfield.processor;
+package com.gredok.optionalfield.processor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -41,9 +41,9 @@ import javax.tools.JavaFileObject;
 public class OptionalFieldProcessor extends AbstractProcessor {
 
     /** Base package used in generated imports. */
-    protected static final String PACKAGE = "io.optionalfield.processor";
+    protected static final String PACKAGE = "com.gredok.optionalfield.processor";
 
-    private Set<String> skipAnotations = Set.of("Schema");
+    private Set<String> skipAnnotations = Set.of("Schema");
 
     private Messager messager;
     private Elements elementUtils;
@@ -96,6 +96,8 @@ public class OptionalFieldProcessor extends AbstractProcessor {
             imports.add(PACKAGE + ".OptionalField");
             imports.add(PACKAGE + ".jackson.AbstractOptionalFieldClassDeserializer");
             imports.add(PACKAGE + ".jackson.AbstractOptionalFieldClassSerializer");
+            imports.add("java.util.HashMap");
+            imports.add("java.util.Map");
 
             // Collect imports
             for (Element field : classElement.getEnclosedElements()) {
@@ -141,6 +143,8 @@ public class OptionalFieldProcessor extends AbstractProcessor {
 
                 // Generate Builder
                 generateBuilder(out, classElement);
+
+                generateToMap(out, classElement);
 
                 generateDeserializer(out, classElement);
 
@@ -236,6 +240,20 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         out.println("    }");
     }
 
+    private void generateToMap(PrintWriter out, TypeElement classElement) {
+        out.println();
+        out.println("    public Map<String, Object> toMap() {");
+        out.println("        Map<String, Object> map = new HashMap<>();");
+        for (Element field : classElement.getEnclosedElements()) {
+            if (field.getKind() == ElementKind.FIELD) {
+                String fieldName = field.getSimpleName().toString();
+                out.println("        if (this." + fieldName + ".isPresent()) map.put(\"" + fieldName + "\", this." + fieldName + ".getValue());");
+            }
+        }
+        out.println("        return map;");
+        out.println("    }");
+    }
+
     private void generateDeserializer(PrintWriter out, TypeElement classElement) {
         Name originalClassName = classElement.getSimpleName();
         String reqClassName = originalClassName + "Req";
@@ -265,7 +283,7 @@ public class OptionalFieldProcessor extends AbstractProcessor {
         // Get all annotations except OptionalField
         List<? extends AnnotationMirror> annotations = field.getAnnotationMirrors().stream()
                 .filter(am -> !am.getAnnotationType().toString().contains("OptionalClassReq"))
-                .filter(am -> !skipAnotations.contains(am.getAnnotationType().toString().substring(am.getAnnotationType().toString().lastIndexOf('.') + 1)))
+                .filter(am -> !skipAnnotations.contains(am.getAnnotationType().toString().substring(am.getAnnotationType().toString().lastIndexOf('.') + 1)))
                 .toList();
 
         List<? extends AnnotationMirror> fliedAnnotations = annotations.stream()
