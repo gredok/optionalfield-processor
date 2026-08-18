@@ -71,8 +71,8 @@ Available on Maven Central — no extra repositories or credentials needed.
 
 ```kotlin
 dependencies {
-    implementation("com.gredok:optionalfield-processor:1.2.0")
-    annotationProcessor("com.gredok:optionalfield-processor:1.2.0")
+    implementation("com.gredok:optionalfield-processor:0.1.0")
+    annotationProcessor("com.gredok:optionalfield-processor:0.1.0")
 }
 
 repositories {
@@ -86,7 +86,7 @@ repositories {
 <dependency>
     <groupId>com.gredok</groupId>
     <artifactId>optionalfield-processor</artifactId>
-    <version>1.2.0</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -109,6 +109,12 @@ UpdateUserRequestReq req = UpdateUserRequestReq.builder()
     .build();
 // req.getNote().isPresent() == false
 ```
+
+## Demo
+
+Ready-to-copy usage examples (a partial-update helper that applies only the `OptionalField`s that are present onto an existing entity, via reflection) live in:
+- [`demo/ObjectUpdater.kt`](demo/ObjectUpdater.kt) (Kotlin)
+- [`demo/ObjectUpdater.java`](demo/ObjectUpdater.java) (Java)
 
 ## License
 
