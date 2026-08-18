@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.gredok"
-version = "1.2.0"
+version = "0.1.0"
 
 java {
     toolchain {
@@ -97,7 +97,15 @@ publishing {
 signing {
     // Only sign when key material is available (CI). Leaves `./gradlew publishToMavenLocal`
     // working locally without a GPG key configured. Central rejects unsigned releases.
-    val signingKey = (findProperty("signingKey") as String?) ?: System.getenv("SIGNING_KEY")
+    //
+    // The key can be supplied either as a file path (signingKeyFile — recommended locally,
+    // avoids fragile \n-escaping of a multi-line armored key inside a .properties value) or
+    // as the raw armored key text directly (signingKey / SIGNING_KEY — used in CI, where the
+    // key is injected as a GitHub Actions secret).
+    val signingKeyFile = findProperty("signingKeyFile") as String?
+    val signingKey = signingKeyFile?.let { file(it).readText() }
+        ?: (findProperty("signingKey") as String?)
+        ?: System.getenv("SIGNING_KEY")
     val signingPassword = (findProperty("signingPassword") as String?) ?: System.getenv("SIGNING_PASSWORD")
     isRequired = signingKey != null && signingPassword != null
     if (isRequired) {
